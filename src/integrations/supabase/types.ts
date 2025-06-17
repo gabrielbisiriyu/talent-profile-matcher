@@ -9,7 +9,227 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          applied_at: string
+          candidate_id: string
+          cover_letter: string | null
+          id: string
+          job_id: string
+          match_score: number | null
+          status: string | null
+        }
+        Insert: {
+          applied_at?: string
+          candidate_id: string
+          cover_letter?: string | null
+          id?: string
+          job_id: string
+          match_score?: number | null
+          status?: string | null
+        }
+        Update: {
+          applied_at?: string
+          candidate_id?: string
+          cover_letter?: string | null
+          id?: string
+          job_id?: string
+          match_score?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidates: {
+        Row: {
+          bio: string | null
+          created_at: string
+          cv_embeddings: Json | null
+          cv_file_name: string | null
+          cv_file_type: string | null
+          cv_file_url: string | null
+          education: string | null
+          experience_years: number | null
+          github_url: string | null
+          id: string
+          linkedin_url: string | null
+          parsed_cv_data: Json | null
+          portfolio_url: string | null
+          skills: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          cv_embeddings?: Json | null
+          cv_file_name?: string | null
+          cv_file_type?: string | null
+          cv_file_url?: string | null
+          education?: string | null
+          experience_years?: number | null
+          github_url?: string | null
+          id: string
+          linkedin_url?: string | null
+          parsed_cv_data?: Json | null
+          portfolio_url?: string | null
+          skills?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          cv_embeddings?: Json | null
+          cv_file_name?: string | null
+          cv_file_type?: string | null
+          cv_file_url?: string | null
+          education?: string | null
+          experience_years?: number | null
+          github_url?: string | null
+          id?: string
+          linkedin_url?: string | null
+          parsed_cv_data?: Json | null
+          portfolio_url?: string | null
+          skills?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      companies: {
+        Row: {
+          company_description: string | null
+          company_size: string | null
+          created_at: string
+          founded_year: number | null
+          id: string
+          industry: string | null
+          logo_url: string | null
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          company_description?: string | null
+          company_size?: string | null
+          created_at?: string
+          founded_year?: number | null
+          id: string
+          industry?: string | null
+          logo_url?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          company_description?: string | null
+          company_size?: string | null
+          created_at?: string
+          founded_year?: number | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          job_embeddings: Json | null
+          job_type: string | null
+          location: string | null
+          parsed_job_data: Json | null
+          remote_option: boolean | null
+          requirements: string[] | null
+          salary_max: number | null
+          salary_min: number | null
+          skills_required: string[] | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description: string
+          id?: string
+          job_embeddings?: Json | null
+          job_type?: string | null
+          location?: string | null
+          parsed_job_data?: Json | null
+          remote_option?: boolean | null
+          requirements?: string[] | null
+          salary_max?: number | null
+          salary_min?: number | null
+          skills_required?: string[] | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          job_embeddings?: Json | null
+          job_type?: string | null
+          location?: string | null
+          parsed_job_data?: Json | null
+          remote_option?: boolean | null
+          requirements?: string[] | null
+          salary_max?: number | null
+          salary_min?: number | null
+          skills_required?: string[] | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          location: string | null
+          updated_at: string
+          user_type: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          location?: string | null
+          updated_at?: string
+          user_type: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          location?: string | null
+          updated_at?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
