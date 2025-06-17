@@ -42,7 +42,22 @@ const Auth = () => {
         password: formData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Login failed",
+            description: "Invalid email or password. Please check your credentials and try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
 
       toast({
         title: "Welcome back!",
@@ -53,7 +68,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -82,7 +97,28 @@ const Auth = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('User already registered')) {
+          toast({
+            title: "Account already exists",
+            description: "An account with this email already exists. Please try logging in instead.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes('Password should be at least')) {
+          toast({
+            title: "Password too weak",
+            description: "Password should be at least 6 characters long.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Signup failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
 
       toast({
         title: "Account created!",
@@ -93,7 +129,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Signup failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -210,10 +246,11 @@ const Auth = () => {
                     id="signup-password"
                     name="password"
                     type="password"
-                    placeholder="Create a password"
+                    placeholder="Create a password (min 6 characters)"
                     value={formData.password}
                     onChange={handleInputChange}
                     required
+                    minLength={6}
                   />
                 </div>
 

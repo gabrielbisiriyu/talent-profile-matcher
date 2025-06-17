@@ -85,7 +85,8 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white/60 backdrop-blur-sm">
+          <TabsList className="grid w-full bg-white/60 backdrop-blur-sm" 
+            style={{ gridTemplateColumns: `repeat(${isCandidate ? 3 : isCompany ? 4 : 5}, 1fr)` }}>
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span>Dashboard</span>
