@@ -6,15 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, CheckCircle, Building } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Upload, FileText, CheckCircle } from "lucide-react";
 
 export const JobUpload = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [companyId, setCompanyId] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [parsedData, setParsedData] = useState<any>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -33,10 +34,19 @@ export const JobUpload = () => {
   };
 
   const handleUpload = async () => {
-    if (!file || !companyId.trim()) {
+    if (!file) {
       toast({
-        title: "Missing information",
-        description: "Please provide both a company ID and select a file",
+        title: "Missing file",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        title: "Authentication error",
+        description: "User not authenticated",
         variant: "destructive",
       });
       return;
@@ -47,7 +57,7 @@ export const JobUpload = () => {
 
     try {
       const formData = new FormData();
-      formData.append("company_id", companyId);
+      formData.append("company_id", user.id);
       formData.append("file", file);
 
       const progressInterval = setInterval(() => {
@@ -90,21 +100,6 @@ export const JobUpload = () => {
     <div className="space-y-6">
       <div className="grid gap-4">
         <div className="space-y-2">
-          <Label htmlFor="companyId" className="flex items-center space-x-2">
-            <Building className="h-4 w-4" />
-            <span>Company ID</span>
-          </Label>
-          <Input
-            id="companyId"
-            type="text"
-            placeholder="Enter your company ID"
-            value={companyId}
-            onChange={(e) => setCompanyId(e.target.value)}
-            className="bg-white/80"
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="job-file" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
             <span>Job Description (PDF, DOCX, or TXT)</span>
@@ -146,7 +141,7 @@ export const JobUpload = () => {
 
         <Button
           onClick={handleUpload}
-          disabled={!file || !companyId.trim() || isUploading}
+          disabled={!file || isUploading}
           className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
         >
           {isUploading ? (

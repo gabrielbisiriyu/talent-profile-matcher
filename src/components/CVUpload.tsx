@@ -6,15 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, CheckCircle, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Upload, FileText, CheckCircle } from "lucide-react";
 
 export const CVUpload = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [userId, setUserId] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [parsedData, setParsedData] = useState<any>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -33,10 +34,19 @@ export const CVUpload = () => {
   };
 
   const handleUpload = async () => {
-    if (!file || !userId.trim()) {
+    if (!file) {
       toast({
-        title: "Missing information",
-        description: "Please provide both a user ID and select a file",
+        title: "Missing file",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        title: "Authentication error",
+        description: "User not authenticated",
         variant: "destructive",
       });
       return;
@@ -47,7 +57,7 @@ export const CVUpload = () => {
 
     try {
       const formData = new FormData();
-      formData.append("user_id", userId);
+      formData.append("user_id", user.id);
       formData.append("file", file);
 
       // Simulate progress for better UX
@@ -90,21 +100,6 @@ export const CVUpload = () => {
   return (
     <div className="space-y-6">
       <div className="grid gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="userId" className="flex items-center space-x-2">
-            <User className="h-4 w-4" />
-            <span>User ID</span>
-          </Label>
-          <Input
-            id="userId"
-            type="text"
-            placeholder="Enter your unique user ID"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            className="bg-white/80"
-          />
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="cv-file" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
@@ -149,7 +144,7 @@ export const CVUpload = () => {
 
         <Button
           onClick={handleUpload}
-          disabled={!file || !userId.trim() || isUploading}
+          disabled={!file || isUploading}
           className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
         >
           {isUploading ? (
