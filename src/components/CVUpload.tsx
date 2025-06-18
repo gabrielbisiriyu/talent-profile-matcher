@@ -183,9 +183,17 @@ export const CVUpload = () => {
               <div>
                 <h4 className="font-medium text-green-900 mb-2">Personal Information</h4>
                 <div className="bg-white/60 p-3 rounded-lg">
-                  <p className="text-sm"><strong>Name:</strong> {parsedData.parsed_cv?.personalInfo?.name || "N/A"}</p>
-                  <p className="text-sm"><strong>Email:</strong> {parsedData.parsed_cv?.personalInfo?.email || "N/A"}</p>
-                  <p className="text-sm"><strong>Phone:</strong> {parsedData.parsed_cv?.personalInfo?.phone || "N/A"}</p>
+                  {parsedData.parsed_cv?.personalInfo?.length > 0 ? (
+                    <>
+                      <p className="text-sm"><strong>Name:</strong> {parsedData.parsed_cv.personalInfo[0].name || "N/A"}</p>
+                      <p className="text-sm"><strong>Email:</strong> {parsedData.parsed_cv.personalInfo[0].emailAddress || "N/A"}</p>
+                      <p className="text-sm"><strong>Phone:</strong> {parsedData.parsed_cv.personalInfo[0].telephoneNumber || "N/A"}</p>
+                      <p className="text-sm"><strong>GitHub:</strong> {parsedData.parsed_cv.personalInfo[0].github || "N/A"}</p>
+                      <p className="text-sm"><strong>LinkedIn:</strong> {parsedData.parsed_cv.personalInfo[0].linkedin || "N/A"}</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-red-600">No personal information found.</p>
+                  )}
                 </div>
               </div>
 
