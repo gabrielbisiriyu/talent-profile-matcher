@@ -14,6 +14,7 @@ export const CVUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [parsedData, setParsedData] = useState<any>(null);
+  const [wasDuplicate, setWasDuplicate] = useState(false); // ✅ added
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -30,6 +31,7 @@ export const CVUpload = () => {
       }
       setFile(selectedFile);
       setParsedData(null);
+      setWasDuplicate(false); // ✅ reset
     }
   };
 
@@ -73,18 +75,29 @@ export const CVUpload = () => {
       clearInterval(progressInterval);
       setUploadProgress(100);
 
+      const data = await response.json();
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || "Upload failed");
       }
 
-      const data = await response.json();
+
+        if (data.is_duplicate) {
+        setWasDuplicate(true);
+        toast({
+          title: "CV already exists",
+          description: "This CV was uploaded before. Showing the existing parsed result.",
+        });
+      } else {
+        setWasDuplicate(false);
+        toast({
+          title: "CV parsed successfully!",
+          description: "Your CV has been processed and embeddings generated.",
+        });
+      }
+      
       setParsedData(data);
       
-      toast({
-        title: "CV parsed successfully!",
-        description: "Your CV has been processed and embeddings generated",
-      });
     } catch (error) {
       toast({
         title: "Upload failed",
