@@ -227,56 +227,60 @@ export const JobManagement = () => {
 
               {/* Show matching candidates for this job */}
               {candidates[job.id] && candidates[job.id].length > 0 && (
-                <Card className="bg-green-50 border-green-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center space-x-2">
-                      <Users className="h-5 w-5 text-green-600" />
-                      <span>Matching Candidates ({candidates[job.id].length})</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {candidates[job.id].map((candidate, index) => (
-                      <Card key={index} className="bg-white/80">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h5 className="font-semibold">{candidate.candidate?.name || "Candidate"}</h5>
-                              <p className="text-sm text-gray-600">{candidate.candidate?.email || "Email not available"}</p>
-                              <p className="text-sm text-gray-600">CV ID: {candidate.cv_id}</p>
-                            </div>
-                            <div className="text-right">
-                              <div className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(candidate.combined_score)}`}>
-                                <Star className="h-3 w-3 inline mr-1" />
-                                {getScoreLabel(candidate.combined_score)}
-                              </div>
-                              <p className="text-lg font-bold text-gray-900 mt-1">
-                                {(candidate.combined_score * 100).toFixed(1)}%
-                              </p>
-                            </div>
+              <Card className="bg-green-50 border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <Users className="h-5 w-5 text-green-600" />
+                    <span>Matching Candidates ({candidates[job.id].length})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {candidates[job.id].map((candidate, index) => (
+                    <Card key={index} className="bg-white/80">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h5 className="font-semibold">
+                              {candidate.candidate?.name || "Candidate"}
+                            </h5>
+                            <p className="text-sm text-gray-600">
+                              {candidate.candidate?.email || "Email not available"}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              CV ID: {candidate.cv_id}
+                            </p>
                           </div>
+                          <div className="text-right">
+                            <div
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(
+                                candidate.combined_score
+                              )}`}
+                            >
+                              <Star className="h-3 w-3 inline mr-1" />
+                              {getScoreLabel(candidate.combined_score)}
+                            </div>
+                            <p className="text-lg font-bold text-gray-900 mt-1">
+                              {candidate.combined_score.toFixed(1)}%
+                            </p>
+                          </div>
+                        </div>
 
-                          <div className="grid md:grid-cols-3 gap-3">
-                            <div>
-                              <p className="text-xs font-medium text-gray-700 mb-1">Document Similarity</p>
-                              <Progress value={candidate.doc_score * 100} className="h-1.5" />
-                              <p className="text-xs text-gray-600 mt-1">{(candidate.doc_score * 100).toFixed(1)}%</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-medium text-gray-700 mb-1">Skills Match</p>
-                              <Progress value={candidate.skill_score * 100} className="h-1.5" />
-                              <p className="text-xs text-gray-600 mt-1">{(candidate.skill_score * 100).toFixed(1)}%</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-medium text-gray-700 mb-1">Experience Alignment</p>
-                              <Progress value={candidate.exp_score * 100} className="h-1.5" />
-                              <p className="text-xs text-gray-600 mt-1">{(candidate.exp_score * 100).toFixed(1)}%</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </CardContent>
-                </Card>
+                        <div>
+                          <p className="text-xs font-medium text-gray-700 mb-1">Overall Score</p>
+                          <Progress
+                            value={candidate.combined_score}
+                            className="h-1.5"
+                          />
+                          <p className="text-xs text-gray-600 mt-1">
+                            {candidate.combined_score.toFixed(1)}%
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </CardContent>
+              </Card>
+
               )}
             </div>
           ))}
