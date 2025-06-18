@@ -14,6 +14,7 @@ export const JobUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [parsedData, setParsedData] = useState<any>(null);
+  const [wasDuplicate, setWasDuplicate] = useState(false); // ✅ added
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -30,6 +31,7 @@ export const JobUpload = () => {
       }
       setFile(selectedFile);
       setParsedData(null);
+      setWasDuplicate(false); // ✅ reset
     }
   };
 
@@ -72,18 +74,29 @@ export const JobUpload = () => {
       clearInterval(progressInterval);
       setUploadProgress(100);
 
+      const data = await response.json();
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || "Upload failed");
       }
 
-      const data = await response.json();
-      setParsedData(data);
-      
+
+      if (data.is_duplicate) {
+        setWasDuplicate(true);
+        toast({
+          title: "Job Post already exists",
+          description: "This Job Poast was uploaded before. Showing the existing parsed result.",
+        });
+      } else {
+        setWasDuplicate(false);
       toast({
         title: "Job posting parsed successfully!",
         description: "Your job description has been processed and embeddings generated",
       });
+      }
+    
+      setParsedData(data);    
+
     } catch (error) {
       toast({
         title: "Upload failed",
