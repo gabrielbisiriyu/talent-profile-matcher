@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { JobUpload } from "@/components/JobUpload";
 import { MatchingResults } from "@/components/MatchingResults";
 import { JobManagement } from "@/components/JobManagement";
 import { Dashboard } from "@/components/Dashboard";
+import { CandidateProfile } from "@/components/CandidateProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { FileText, Briefcase, Target, BarChart3, Brain, LogOut, User } from "lucide-react";
 
@@ -64,15 +64,16 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 px-3 py-1 bg-blue-100 rounded-full">
-                <User className="w-4 h-4 text-blue-700" />
-                <span className="text-sm font-medium text-blue-700">
-                  {userProfile?.user_type === 'candidate' 
-                    ? `${userProfile?.first_name} ${userProfile?.last_name}`
-                    : userProfile?.company_name
-                  }
-                </span>
-              </div>
+              {isCandidate ? (
+                <CandidateProfile />
+              ) : (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-blue-100 rounded-full">
+                  <User className="w-4 h-4 text-blue-700" />
+                  <span className="text-sm font-medium text-blue-700">
+                    {userProfile?.company_name}
+                  </span>
+                </div>
+              )}
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
