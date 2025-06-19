@@ -49,55 +49,73 @@ export type Database = {
       }
       candidates: {
         Row: {
+          address: string | null
           bio: string | null
+          certifications: string[] | null
           created_at: string
           cv_embeddings: Json | null
           cv_file_name: string | null
           cv_file_type: string | null
           cv_file_url: string | null
-          education: string | null
+          cv_hash: string | null
+          education: Json | null
+          email_from_cv: string | null
           experience_years: number | null
           github_url: string | null
           id: string
           linkedin_url: string | null
           parsed_cv_data: Json | null
+          phone_number: string | null
           portfolio_url: string | null
           skills: string[] | null
           updated_at: string
+          work_experience: Json | null
         }
         Insert: {
+          address?: string | null
           bio?: string | null
+          certifications?: string[] | null
           created_at?: string
           cv_embeddings?: Json | null
           cv_file_name?: string | null
           cv_file_type?: string | null
           cv_file_url?: string | null
-          education?: string | null
+          cv_hash?: string | null
+          education?: Json | null
+          email_from_cv?: string | null
           experience_years?: number | null
           github_url?: string | null
           id: string
           linkedin_url?: string | null
           parsed_cv_data?: Json | null
+          phone_number?: string | null
           portfolio_url?: string | null
           skills?: string[] | null
           updated_at?: string
+          work_experience?: Json | null
         }
         Update: {
+          address?: string | null
           bio?: string | null
+          certifications?: string[] | null
           created_at?: string
           cv_embeddings?: Json | null
           cv_file_name?: string | null
           cv_file_type?: string | null
           cv_file_url?: string | null
-          education?: string | null
+          cv_hash?: string | null
+          education?: Json | null
+          email_from_cv?: string | null
           experience_years?: number | null
           github_url?: string | null
           id?: string
           linkedin_url?: string | null
           parsed_cv_data?: Json | null
+          phone_number?: string | null
           portfolio_url?: string | null
           skills?: string[] | null
           updated_at?: string
+          work_experience?: Json | null
         }
         Relationships: []
       }
