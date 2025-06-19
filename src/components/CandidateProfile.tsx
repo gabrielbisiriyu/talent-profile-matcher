@@ -30,6 +30,7 @@ export const CandidateProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedBio, setEditedBio] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const { user, userProfile } = useAuth();
   const { toast } = useToast();
 
@@ -39,12 +40,41 @@ export const CandidateProfile = () => {
     }
   }, [user?.id]);
 
+  // Listen for real-time updates to the candidates table
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('candidate-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'candidates',
+          filter: `id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Candidate data updated:', payload);
+          fetchCandidateData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const fetchCandidateData = async () => {
+    if (!user?.id) return;
+    
     try {
+      console.log('Fetching candidate data for user:', user.id);
       const { data, error } = await supabase
         .from('candidates')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (error) {
@@ -52,9 +82,13 @@ export const CandidateProfile = () => {
         return;
       }
 
+      console.log('Fetched candidate data:', data);
       if (data) {
         setCandidateData(data);
         setEditedBio(data.bio || "");
+      } else {
+        console.log('No candidate data found for user');
+        setCandidateData(null);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -118,7 +152,7 @@ export const CandidateProfile = () => {
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" className="flex items-center space-x-2 px-3 py-1 bg-blue-100 rounded-full hover:bg-blue-200">
           <User className="w-4 h-4 text-blue-700" />
