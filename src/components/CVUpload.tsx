@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Upload, FileText, CheckCircle } from "lucide-react";
 
 export const CVUpload = () => {
@@ -14,7 +14,7 @@ export const CVUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [parsedData, setParsedData] = useState<any>(null);
-  const [wasDuplicate, setWasDuplicate] = useState(false); // ✅ added
+  const [wasDuplicate, setWasDuplicate] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -31,7 +31,55 @@ export const CVUpload = () => {
       }
       setFile(selectedFile);
       setParsedData(null);
-      setWasDuplicate(false); // ✅ reset
+      setWasDuplicate(false);
+    }
+  };
+
+  const storeParsedDataInDatabase = async (data: any) => {
+    if (!user?.id || !data.parsed_cv) return;
+
+    try {
+      const personalInfo = data.parsed_cv.personalInfo?.[0] || {};
+      
+      // Prepare the data for insertion/update
+      const candidateData = {
+        id: user.id,
+        address: personalInfo.location !== "null" ? personalInfo.location : null,
+        email_from_cv: personalInfo.emailAddress !== "null" ? personalInfo.emailAddress : null,
+        phone_number: personalInfo.telephoneNumber !== "null" ? personalInfo.telephoneNumber : null,
+        github_url: personalInfo.github !== "null" ? personalInfo.github : null,
+        linkedin_url: personalInfo.linkedin !== "null" ? personalInfo.linkedin : null,
+        skills: data.parsed_cv.skills || [],
+        education: data.parsed_cv.educatipn || [], // Note: keeping the typo from API
+        work_experience: data.parsed_cv.experience || [],
+        certifications: data.parsed_cv.certificates || [],
+        cv_hash: data.hash,
+        parsed_cv_data: data.parsed_cv,
+        cv_embeddings: data.embeddings,
+        updated_at: new Date().toISOString()
+      };
+
+      // Use upsert to insert or update
+      const { error } = await supabase
+        .from('candidates')
+        .upsert(candidateData, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error('Error storing candidate data:', error);
+        throw error;
+      }
+
+      console.log('Successfully stored parsed CV data in database');
+    } catch (error) {
+      console.error('Error storing parsed data:', error);
+      toast({
+        title: "Warning",
+        description: "CV parsed successfully but failed to save profile data",
+        variant: "destructive",
+      });
     }
   };
 
@@ -75,14 +123,14 @@ export const CVUpload = () => {
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      const data = await response.json();
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || "Upload failed");
       }
 
+      const data = await response.json();
 
-        if (data.is_duplicate) {
+      if (data.is_duplicate) {
         setWasDuplicate(true);
         toast({
           title: "CV already exists",
@@ -92,11 +140,14 @@ export const CVUpload = () => {
         setWasDuplicate(false);
         toast({
           title: "CV parsed successfully!",
-          description: "Your CV has been processed and embeddings generated.",
+          description: "Your CV has been processed and profile updated.",
         });
       }
       
       setParsedData(data);
+      
+      // Store the parsed data in the database
+      await storeParsedDataInDatabase(data);
       
     } catch (error) {
       toast({

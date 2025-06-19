@@ -1,8 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -10,36 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { User, FileText, Github, Linkedin, Globe, Edit, Save, X, MapPin, Mail, GraduationCap, Briefcase, Award } from "lucide-react";
-
-interface ParsedCVData {
-  personalInfo: Array<{
-    name: string;
-    location: string;
-    emailAddress: string;
-    github: string;
-    linkedin: string;
-    telephoneNumber: string;
-  }>;
-  educatipn: Array<{
-    school: string;
-    degree: string;
-    field: string;
-  }>;
-  experience: Array<{
-    company: string;
-    jobTitle: string;
-    timeWorked: string;
-    responsibilities: string;
-  }>;
-  skills: string[];
-  certificates: string[];
-}
+import { User, Github, Linkedin, Globe, Edit, Save, X, MapPin, Mail, GraduationCap, Briefcase, Award } from "lucide-react";
 
 interface CandidateData {
   bio: string;
-  cv_file_url: string;
-  cv_file_name: string;
   skills: string[];
   github_url: string;
   linkedin_url: string;
@@ -47,15 +19,14 @@ interface CandidateData {
   address: string;
   email_from_cv: string;
   phone_number: string;
-  education: any;
-  work_experience: any;
+  education: any[];
+  work_experience: any[];
   certifications: string[];
-  cv_hash: string;
+  parsed_cv_data: any;
 }
 
 export const CandidateProfile = () => {
   const [candidateData, setCandidateData] = useState<CandidateData | null>(null);
-  const [parsedCVData, setParsedCVData] = useState<ParsedCVData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedBio, setEditedBio] = useState("");
   const [loading, setLoading] = useState(false);
@@ -84,28 +55,9 @@ export const CandidateProfile = () => {
       if (data) {
         setCandidateData(data);
         setEditedBio(data.bio || "");
-        
-        // If we have a CV hash, try to fetch parsed CV data
-        if (data.cv_hash) {
-          await fetchParsedCVData(data.cv_hash);
-        }
       }
     } catch (error) {
       console.error('Error:', error);
-    }
-  };
-
-  const fetchParsedCVData = async (cvHash: string) => {
-    try {
-      // Make a request to your FastAPI backend to get parsed CV data
-      const response = await fetch(`http://localhost:8000/get_parsed_cv/${cvHash}`);
-      if (response.ok) {
-        const data = await response.json();
-        setParsedCVData(data.parsed_cv);
-      }
-    } catch (error) {
-      console.error('Error fetching parsed CV data:', error);
-      // If the API call fails, we'll use the data stored in the database
     }
   };
 
@@ -145,12 +97,11 @@ export const CandidateProfile = () => {
     setIsEditing(false);
   };
 
-  // Get the primary personal info (first entry or fallback to database data)
-  const personalInfo = parsedCVData?.personalInfo?.[0];
-  const displayEmail = personalInfo?.emailAddress !== "null" ? personalInfo?.emailAddress : userProfile?.email;
-  const displayAddress = personalInfo?.location !== "null" ? personalInfo?.location : candidateData?.address;
-  const displayGithub = personalInfo?.github !== "null" ? personalInfo?.github : candidateData?.github_url;
-  const displayLinkedin = personalInfo?.linkedin !== "null" ? personalInfo?.linkedin : candidateData?.linkedin_url;
+  // Get display values (prioritize CV data, fallback to profile data)
+  const displayEmail = candidateData?.email_from_cv || userProfile?.email;
+  const displayAddress = candidateData?.address;
+  const displayGithub = candidateData?.github_url;
+  const displayLinkedin = candidateData?.linkedin_url;
 
   return (
     <Popover>
@@ -175,7 +126,7 @@ export const CandidateProfile = () => {
               {/* Bio Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Bio</Label>
+                  <label className="text-sm font-medium">Bio</label>
                   {!isEditing ? (
                     <Button
                       variant="ghost"
@@ -223,10 +174,10 @@ export const CandidateProfile = () => {
 
               {/* Email */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center space-x-1">
+                <label className="text-sm font-medium flex items-center space-x-1">
                   <Mail className="h-3 w-3" />
                   <span>Email</span>
-                </Label>
+                </label>
                 <div className="bg-gray-50 p-2 rounded text-sm">
                   {displayEmail || "No email available"}
                 </div>
@@ -234,10 +185,10 @@ export const CandidateProfile = () => {
 
               {/* Address */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center space-x-1">
+                <label className="text-sm font-medium flex items-center space-x-1">
                   <MapPin className="h-3 w-3" />
                   <span>Address</span>
-                </Label>
+                </label>
                 <div className="bg-gray-50 p-2 rounded text-sm">
                   {displayAddress || "No address available"}
                 </div>
@@ -245,20 +196,9 @@ export const CandidateProfile = () => {
 
               {/* Skills */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Skills</Label>
+                <label className="text-sm font-medium">Skills</label>
                 <div className="bg-gray-50 p-2 rounded min-h-[40px]">
-                  {parsedCVData?.skills && parsedCVData.skills.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {parsedCVData.skills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  ) : candidateData?.skills && candidateData.skills.length > 0 ? (
+                  {candidateData?.skills && candidateData.skills.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {candidateData.skills.map((skill, index) => (
                         <span
@@ -277,13 +217,13 @@ export const CandidateProfile = () => {
 
               {/* Education */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center space-x-1">
+                <label className="text-sm font-medium flex items-center space-x-1">
                   <GraduationCap className="h-3 w-3" />
                   <span>Education</span>
-                </Label>
+                </label>
                 <div className="bg-gray-50 p-2 rounded text-sm space-y-2">
-                  {parsedCVData?.educatipn && parsedCVData.educatipn.length > 0 ? (
-                    parsedCVData.educatipn.map((edu, index) => (
+                  {candidateData?.education && candidateData.education.length > 0 ? (
+                    candidateData.education.map((edu, index) => (
                       <div key={index} className="border-b border-gray-200 last:border-b-0 pb-2 last:pb-0">
                         <div className="font-medium">{edu.degree} in {edu.field}</div>
                         <div className="text-xs text-gray-600">{edu.school}</div>
@@ -297,13 +237,13 @@ export const CandidateProfile = () => {
 
               {/* Work Experience */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center space-x-1">
+                <label className="text-sm font-medium flex items-center space-x-1">
                   <Briefcase className="h-3 w-3" />
                   <span>Work Experience</span>
-                </Label>
+                </label>
                 <div className="bg-gray-50 p-2 rounded text-sm space-y-3">
-                  {parsedCVData?.experience && parsedCVData.experience.length > 0 ? (
-                    parsedCVData.experience.map((exp, index) => (
+                  {candidateData?.work_experience && candidateData.work_experience.length > 0 ? (
+                    candidateData.work_experience.map((exp, index) => (
                       <div key={index} className="border-b border-gray-200 last:border-b-0 pb-3 last:pb-0">
                         <div className="font-medium">{exp.jobTitle}</div>
                         <div className="text-xs text-blue-600 font-medium">{exp.company}</div>
@@ -321,18 +261,12 @@ export const CandidateProfile = () => {
 
               {/* Certifications */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center space-x-1">
+                <label className="text-sm font-medium flex items-center space-x-1">
                   <Award className="h-3 w-3" />
                   <span>Certifications</span>
-                </Label>
+                </label>
                 <div className="bg-gray-50 p-2 rounded text-sm">
-                  {parsedCVData?.certificates && parsedCVData.certificates.length > 0 ? (
-                    <div className="space-y-1">
-                      {parsedCVData.certificates.map((cert, index) => (
-                        <div key={index} className="text-sm">{cert}</div>
-                      ))}
-                    </div>
-                  ) : candidateData?.certifications && candidateData.certifications.length > 0 ? (
+                  {candidateData?.certifications && candidateData.certifications.length > 0 ? (
                     <div className="space-y-1">
                       {candidateData.certifications.map((cert, index) => (
                         <div key={index} className="text-sm">{cert}</div>
@@ -348,10 +282,10 @@ export const CandidateProfile = () => {
               <div className="space-y-3">
                 {/* GitHub */}
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium flex items-center space-x-1">
+                  <label className="text-sm font-medium flex items-center space-x-1">
                     <Github className="h-3 w-3" />
                     <span>GitHub</span>
-                  </Label>
+                  </label>
                   {displayGithub && displayGithub !== "null" ? (
                     <a
                       href={displayGithub.startsWith('http') ? displayGithub : `https://${displayGithub}`}
@@ -370,10 +304,10 @@ export const CandidateProfile = () => {
 
                 {/* LinkedIn */}
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium flex items-center space-x-1">
+                  <label className="text-sm font-medium flex items-center space-x-1">
                     <Linkedin className="h-3 w-3" />
                     <span>LinkedIn</span>
-                  </Label>
+                  </label>
                   {displayLinkedin && displayLinkedin !== "null" ? (
                     <a
                       href={displayLinkedin.startsWith('http') ? displayLinkedin : `https://${displayLinkedin}`}
@@ -392,10 +326,10 @@ export const CandidateProfile = () => {
 
                 {/* Portfolio */}
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium flex items-center space-x-1">
+                  <label className="text-sm font-medium flex items-center space-x-1">
                     <Globe className="h-3 w-3" />
                     <span>Portfolio</span>
-                  </Label>
+                  </label>
                   {candidateData?.portfolio_url ? (
                     <a
                       href={candidateData.portfolio_url.startsWith('http') ? candidateData.portfolio_url : `https://${candidateData.portfolio_url}`}
