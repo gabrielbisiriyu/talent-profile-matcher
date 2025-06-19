@@ -11,17 +11,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Github, Linkedin, Globe, Edit, Save, X, MapPin, Mail, GraduationCap, Briefcase, Award } from "lucide-react";
 
 interface CandidateData {
-  bio: string;
-  skills: string[];
-  github_url: string;
-  linkedin_url: string;
-  portfolio_url: string;
-  address: string;
-  email_from_cv: string;
-  phone_number: string;
-  education: any[];
-  work_experience: any[];
-  certifications: string[];
+  bio: string | null;
+  skills: string[] | null;
+  github_url: string | null;
+  linkedin_url: string | null;
+  portfolio_url: string | null;
+  address: string | null;
+  email_from_cv: string | null;
+  phone_number: string | null;
+  education: any; // Changed from any[] to any to match database Json type
+  work_experience: any; // Changed from any[] to any to match database Json type
+  certifications: string[] | null;
   parsed_cv_data: any;
 }
 
@@ -102,6 +102,20 @@ export const CandidateProfile = () => {
   const displayAddress = candidateData?.address;
   const displayGithub = candidateData?.github_url;
   const displayLinkedin = candidateData?.linkedin_url;
+
+  // Helper function to safely get education data
+  const getEducationData = () => {
+    if (!candidateData?.education) return [];
+    if (Array.isArray(candidateData.education)) return candidateData.education;
+    return [];
+  };
+
+  // Helper function to safely get work experience data
+  const getWorkExperienceData = () => {
+    if (!candidateData?.work_experience) return [];
+    if (Array.isArray(candidateData.work_experience)) return candidateData.work_experience;
+    return [];
+  };
 
   return (
     <Popover>
@@ -222,8 +236,8 @@ export const CandidateProfile = () => {
                   <span>Education</span>
                 </label>
                 <div className="bg-gray-50 p-2 rounded text-sm space-y-2">
-                  {candidateData?.education && candidateData.education.length > 0 ? (
-                    candidateData.education.map((edu, index) => (
+                  {getEducationData().length > 0 ? (
+                    getEducationData().map((edu: any, index: number) => (
                       <div key={index} className="border-b border-gray-200 last:border-b-0 pb-2 last:pb-0">
                         <div className="font-medium">{edu.degree} in {edu.field}</div>
                         <div className="text-xs text-gray-600">{edu.school}</div>
@@ -242,8 +256,8 @@ export const CandidateProfile = () => {
                   <span>Work Experience</span>
                 </label>
                 <div className="bg-gray-50 p-2 rounded text-sm space-y-3">
-                  {candidateData?.work_experience && candidateData.work_experience.length > 0 ? (
-                    candidateData.work_experience.map((exp, index) => (
+                  {getWorkExperienceData().length > 0 ? (
+                    getWorkExperienceData().map((exp: any, index: number) => (
                       <div key={index} className="border-b border-gray-200 last:border-b-0 pb-3 last:pb-0">
                         <div className="font-medium">{exp.jobTitle}</div>
                         <div className="text-xs text-blue-600 font-medium">{exp.company}</div>
