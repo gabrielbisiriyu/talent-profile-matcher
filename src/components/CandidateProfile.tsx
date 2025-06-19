@@ -19,8 +19,8 @@ interface CandidateData {
   address: string | null;
   email_from_cv: string | null;
   phone_number: string | null;
-  education: any; // Changed from any[] to any to match database Json type
-  work_experience: any; // Changed from any[] to any to match database Json type
+  education: any;
+  work_experience: any;
   certifications: string[] | null;
   parsed_cv_data: any;
 }
@@ -33,38 +33,6 @@ export const CandidateProfile = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, userProfile } = useAuth();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchCandidateData();
-    }
-  }, [user?.id]);
-
-  // Listen for real-time updates to the candidates table
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = supabase
-      .channel('candidate-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'candidates',
-          filter: `id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Candidate data updated:', payload);
-          fetchCandidateData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
 
   const fetchCandidateData = async () => {
     if (!user?.id) return;
@@ -83,17 +51,51 @@ export const CandidateProfile = () => {
       }
 
       console.log('Fetched candidate data:', data);
-      if (data) {
-        setCandidateData(data);
-        setEditedBio(data.bio || "");
-      } else {
-        console.log('No candidate data found for user');
-        setCandidateData(null);
-      }
+      setCandidateData(data);
+      setEditedBio(data?.bio || "");
     } catch (error) {
       console.error('Error:', error);
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchCandidateData();
+    }
+  }, [user?.id]);
+
+  // Listen for real-time updates to the candidates table
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('candidate-profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'candidates',
+          filter: `id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Real-time candidate data update:', payload);
+          // Update the state directly from the payload for immediate UI update
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+            setCandidateData(payload.new as CandidateData);
+            setEditedBio(payload.new.bio || "");
+          } else if (payload.eventType === 'DELETE') {
+            setCandidateData(null);
+            setEditedBio("");
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const handleSaveBio = async () => {
     if (!user?.id) return;
@@ -131,8 +133,8 @@ export const CandidateProfile = () => {
     setIsEditing(false);
   };
 
-  // Get display values (prioritize CV data, fallback to profile data)
-  const displayEmail = candidateData?.email_from_cv || userProfile?.email;
+  // Get display email with proper fallback logic
+  const displayEmail = candidateData?.email_from_cv || userProfile?.email || "No email available";
   const displayAddress = candidateData?.address;
   const displayGithub = candidateData?.github_url;
   const displayLinkedin = candidateData?.linkedin_url;
@@ -227,7 +229,7 @@ export const CandidateProfile = () => {
                   <span>Email</span>
                 </label>
                 <div className="bg-gray-50 p-2 rounded text-sm">
-                  {displayEmail || "No email available"}
+                  {displayEmail}
                 </div>
               </div>
 
