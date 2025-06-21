@@ -256,8 +256,8 @@ export const MatchingResults = () => {
                 <div className="grid md:grid-cols-3 gap-4 mb-4">
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Document Similarity</p>
-                    <Progress value={match.doc_score * 100} className="h-2" />
-                    <p className="text-xs text-gray-600 mt-1">{(match.doc_score * 100).toFixed(1)}%</p>
+                    <Progress value={match.doc_score} className="h-2" />
+                    <p className="text-xs text-gray-600 mt-1">{(match.doc_score).toFixed(1)}%</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Skills Match</p>
@@ -267,7 +267,7 @@ export const MatchingResults = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Experience Alignment</p>
                     <Progress value={match.exp_score * 100} className="h-2" />
-                    <p className="text-xs text-gray-600 mt-1">{(match.exp_score * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-gray-600 mt-1">{(match.experience_score * 100).toFixed(1)}%</p>
                   </div>
                 </div>
               </CardContent>
