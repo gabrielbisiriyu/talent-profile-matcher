@@ -238,7 +238,7 @@ export const MatchingResults = () => {
                       {getScoreLabel(match.combined_score)}
                     </div>
                     <p className="text-2xl font-bold text-gray-900">
-                      {(match.combined_score * 100).toFixed(1)}%
+                      {(match.combined_score ).toFixed(1)}%
                     </p>
                     {isCandidate && (
                       <Button
