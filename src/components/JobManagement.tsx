@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { JobDetails } from "@/components/JobDetails";
 import { Trash2, Building, Calendar, FileText, Users, Star } from "lucide-react";
 
 export const JobManagement = () => {
@@ -35,7 +37,11 @@ export const JobManagement = () => {
       }
 
       const data = await response.json();
-      setJobs(data.jobs || []);
+      const fetchedJobs = data.jobs || [];
+      setJobs(fetchedJobs);
+
+      // Sync jobs with Supabase jobs table
+      await syncJobsWithDatabase(fetchedJobs);
     } catch (error) {
       toast({
         title: "Failed to load jobs",
@@ -47,8 +53,42 @@ export const JobManagement = () => {
     }
   };
 
+  const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
+    if (!user?.id || fetchedJobs.length === 0) return;
+
+    try {
+      // Prepare job data for upsert
+      const jobsToUpsert = fetchedJobs.map(job => ({
+        id: job.id,
+        company_id: user.id,
+        title: job.parsed_fields?.jobTitle || job.title || "Job Position",
+        description: job.parsed_fields?.description || "No description available",
+        skills_required: job.parsed_fields?.requiredSkills || [],
+        requirements: job.parsed_fields?.roles_or_responsibilities || [],
+        location: job.parsed_fields?.companyInfo?.[0]?.location || null,
+        job_type: job.parsed_fields?.jobType || null,
+        remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
+        parsed_job_data: job.parsed_fields || {},
+        status: 'active',
+        created_at: job.created_at,
+        updated_at: new Date().toISOString(),
+      }));
+
+      const { error } = await supabase
+        .from('jobs')
+        .upsert(jobsToUpsert, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Error syncing jobs with database:', error);
+      }
+    } catch (error) {
+      console.error('Error syncing jobs:', error);
+    }
+  };
+
   const handleDeleteJob = async (jobId: string) => {
     try {
+      // Delete from backend API
       const response = await fetch(`http://localhost:8000/delete_job/${jobId}`, {
         method: "DELETE",
       });
@@ -58,6 +98,17 @@ export const JobManagement = () => {
         throw new Error(errorData.detail || "Failed to delete job");
       }
 
+      // Delete from Supabase jobs table
+      const { error: supabaseError } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (supabaseError) {
+        console.error('Error deleting from Supabase:', supabaseError);
+      }
+
+      // Update local state
       setJobs(jobs.filter(job => job.id !== jobId));
       
       toast({
@@ -193,6 +244,11 @@ export const JobManagement = () => {
                     </div>
 
                     <div className="flex flex-col space-y-2 ml-4">
+                      <JobDetails 
+                        jobId={job.id} 
+                        jobHash={job.text_hash} 
+                        jobTitle={job.parsed_fields?.jobTitle || job.title || "Job Position"}
+                      />
                       <Button
                         onClick={() => handleFindCandidates(job.id, job.text_hash)}
                         disabled={matchingJobId === job.id}

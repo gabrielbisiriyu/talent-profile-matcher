@@ -9,6 +9,7 @@ import { MatchingResults } from "@/components/MatchingResults";
 import { JobManagement } from "@/components/JobManagement";
 import { Dashboard } from "@/components/Dashboard";
 import { CandidateProfile } from "@/components/CandidateProfile";
+import { CompanyProfile } from "@/components/CompanyProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { FileText, Briefcase, Target, BarChart3, Brain, LogOut, User } from "lucide-react";
 
@@ -67,12 +68,7 @@ const Index = () => {
               {isCandidate ? (
                 <CandidateProfile />
               ) : (
-                <div className="flex items-center space-x-2 px-3 py-1 bg-blue-100 rounded-full">
-                  <User className="w-4 h-4 text-blue-700" />
-                  <span className="text-sm font-medium text-blue-700">
-                    {userProfile?.company_name}
-                  </span>
-                </div>
+                <CompanyProfile />
               )}
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />
