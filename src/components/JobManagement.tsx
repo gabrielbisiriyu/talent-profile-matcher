@@ -7,13 +7,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { JobDetails } from "@/components/JobDetails";
-import { Trash2, Building, Calendar, FileText, Users, Star } from "lucide-react";
+import { CandidateProfileView } from "@/components/CandidateProfileView";
+import { Trash2, Building, Calendar, FileText, Users, Star, User } from "lucide-react";
 
 export const JobManagement = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [matchingJobId, setMatchingJobId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<{ [jobId: string]: any[] }>({});
+  const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -64,6 +66,7 @@ export const JobManagement = () => {
             const parseResponse = await fetch(`http://localhost:8000/parse_job?job_hash=${job.text_hash}`);
             if (parseResponse.ok) {
               const parseData = await parseResponse.json();
+              // Extract job_text from the response
               jobText = parseData.job_text || '';
             }
           } catch (error) {
@@ -81,7 +84,7 @@ export const JobManagement = () => {
             job_type: job.parsed_fields?.jobType || null,
             remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
             parsed_job_data: job.parsed_fields || {},
-            job_text: jobText,
+            job_text: jobText, // Store the extracted job_text
             status: 'active',
             created_at: job.created_at,
             updated_at: new Date().toISOString(),
@@ -307,12 +310,14 @@ export const JobManagement = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {candidates[job.id].map((candidate, index) => (
-                    <Card key={index} className="bg-white/80">
+                    <Card key={index} className="bg-white/80 cursor-pointer hover:bg-white/90 transition-colors" 
+                          onClick={() => setSelectedCandidate(candidate)}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h5 className="font-semibold">
-                              {candidate.candidate?.name || "Candidate"}
+                            <h5 className="font-semibold text-blue-600 hover:underline flex items-center space-x-2">
+                              <User className="h-4 w-4" />
+                              <span>{candidate.candidate?.name || "Candidate"}</span>
                             </h5>
                             <p className="text-sm text-gray-600">
                               {candidate.candidate?.email || "Email not available"}
@@ -351,11 +356,19 @@ export const JobManagement = () => {
                   ))}
                 </CardContent>
               </Card>
-
               )}
             </div>
           ))}
         </div>
+      )}
+
+      {/* Candidate Profile View Modal */}
+      {selectedCandidate && (
+        <CandidateProfileView
+          candidate={selectedCandidate}
+          isOpen={!!selectedCandidate}
+          onClose={() => setSelectedCandidate(null)}
+        />
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +50,15 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
         throw new Error('Failed to fetch job details from database');
       }
 
-      setJobDetails(data);
+      // Type-safe parsing of the data
+      const parsedJobData = typeof data.parsed_job_data === 'string' 
+        ? JSON.parse(data.parsed_job_data) 
+        : data.parsed_job_data as ParsedJob;
+
+      setJobDetails({
+        job_text: data.job_text || '',
+        parsed_job_data: parsedJobData || {}
+      });
     } catch (error) {
       console.error('Error fetching job details:', error);
       toast({
@@ -93,6 +101,9 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
             <FileText className="h-5 w-5 text-blue-600" />
             <span>{jobTitle || "Job Details"}</span>
           </DialogTitle>
+          <DialogDescription>
+            Complete job posting details and requirements
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
