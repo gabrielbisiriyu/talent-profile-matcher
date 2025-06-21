@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,97 +155,101 @@ export const CompanyProfile = () => {
               <span>Company Profile</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoading ? (
-              <div className="text-center py-4">
-                <p className="text-gray-600">Loading company information...</p>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Company Name
-                  </label>
-                  <Input
-                    value={userProfile?.company_name || ""}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Auto-generated from profile</p>
+          <ScrollArea className="h-[400px]">
+            <CardContent className="space-y-4 pr-4">
+              {isLoading ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-600">Loading company information...</p>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Company Description
-                  </label>
-                  <Textarea
-                    value={formData.company_description}
-                    onChange={(e) => handleInputChange('company_description', e.target.value)}
-                    placeholder="Describe your company..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Website URL
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <Globe className="h-4 w-4 text-gray-400" />
+              ) : (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Company Name
+                    </label>
                     <Input
-                      value={formData.website_url}
-                      onChange={(e) => handleInputChange('website_url', e.target.value)}
-                      placeholder="https://yourcompany.com"
-                      type="url"
+                      value={userProfile?.company_name || ""}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Auto-generated from profile</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Company Description
+                    </label>
+                    <Textarea
+                      value={formData.company_description}
+                      onChange={(e) => handleInputChange('company_description', e.target.value)}
+                      placeholder="Describe your company..."
+                      className="min-h-[80px]"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Company Size
-                  </label>
-                  <Input
-                    value={formData.company_size}
-                    onChange={(e) => handleInputChange('company_size', e.target.value)}
-                    placeholder="e.g., 50-100 employees"
-                  />
-                </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Website URL
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <Globe className="h-4 w-4 text-gray-400" />
+                      <Input
+                        value={formData.website_url}
+                        onChange={(e) => handleInputChange('website_url', e.target.value)}
+                        placeholder="https://yourcompany.com"
+                        type="url"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Industry
-                  </label>
-                  <Input
-                    value={formData.industry}
-                    onChange={(e) => handleInputChange('industry', e.target.value)}
-                    placeholder="e.g., Technology, Healthcare"
-                  />
-                </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Company Size
+                    </label>
+                    <Input
+                      value={formData.company_size}
+                      onChange={(e) => handleInputChange('company_size', e.target.value)}
+                      placeholder="e.g., 50-100 employees"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    Founded Year
-                  </label>
-                  <Input
-                    value={formData.founded_year}
-                    onChange={(e) => handleInputChange('founded_year', e.target.value)}
-                    placeholder="e.g., 2010"
-                    type="number"
-                  />
-                </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Industry
+                    </label>
+                    <Input
+                      value={formData.industry}
+                      onChange={(e) => handleInputChange('industry', e.target.value)}
+                      placeholder="e.g., Technology, Healthcare"
+                    />
+                  </div>
 
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? "Saving..." : "Save Profile"}
-                </Button>
-              </>
-            )}
-          </CardContent>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      Founded Year
+                    </label>
+                    <Input
+                      value={formData.founded_year}
+                      onChange={(e) => handleInputChange('founded_year', e.target.value)}
+                      placeholder="e.g., 2010"
+                      type="number"
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {isSaving ? "Saving..." : "Save Profile"}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </ScrollArea>
         </Card>
       </PopoverContent>
     </Popover>
