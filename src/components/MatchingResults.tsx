@@ -242,7 +242,7 @@ export const MatchingResults = () => {
                     </p>
                     {isCandidate && (
                       <Button
-                        onClick={() => handleApplyForJob(match.job_id, match.combined_score * 100)}
+                        onClick={() => handleApplyForJob(match.job_id, match.combined_score)}
                         className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                         size="sm"
                       >
@@ -266,7 +266,7 @@ export const MatchingResults = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Experience Alignment</p>
-                    <Progress value={match.exp_score * 100} className="h-2" />
+                    <Progress value={match.experience_score * 100} className="h-2" />
                     <p className="text-xs text-gray-600 mt-1">{(match.experience_score * 100).toFixed(1)}%</p>
                   </div>
                 </div>
