@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +62,13 @@ export const CandidateProfile = () => {
       fetchCandidateData();
     }
   }, [user?.id]);
+
+  useEffect(() => {
+  if (candidateData?.bio !== undefined) {
+    setEditedBio(candidateData.bio || "");
+  }
+  }, [candidateData?.bio]);
+  
 
   // Listen for real-time updates to the candidates table
   useEffect(() => {
