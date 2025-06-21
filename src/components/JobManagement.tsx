@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,26 +56,42 @@ export const JobManagement = () => {
     if (!user?.id || fetchedJobs.length === 0) return;
 
     try {
-      // Prepare job data for upsert
-      const jobsToUpsert = fetchedJobs.map(job => ({
-        id: job.id,
-        company_id: user.id,
-        title: job.parsed_fields?.jobTitle || job.title || "Job Position",
-        description: job.parsed_fields?.description || "No description available",
-        skills_required: job.parsed_fields?.requiredSkills || [],
-        requirements: job.parsed_fields?.roles_or_responsibilities || [],
-        location: job.parsed_fields?.companyInfo?.[0]?.location || null,
-        job_type: job.parsed_fields?.jobType || null,
-        remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
-        parsed_job_data: job.parsed_fields || {},
-        status: 'active',
-        created_at: job.created_at,
-        updated_at: new Date().toISOString(),
-      }));
+      // For each job, get the job_text from the parse_job endpoint
+      const jobsWithText = await Promise.all(
+        fetchedJobs.map(async (job) => {
+          let jobText = '';
+          try {
+            const parseResponse = await fetch(`http://localhost:8000/parse_job?job_hash=${job.text_hash}`);
+            if (parseResponse.ok) {
+              const parseData = await parseResponse.json();
+              jobText = parseData.job_text || '';
+            }
+          } catch (error) {
+            console.error('Error fetching job text for job:', job.id, error);
+          }
+
+          return {
+            id: job.id,
+            company_id: user.id,
+            title: job.parsed_fields?.jobTitle || job.title || "Job Position",
+            description: job.parsed_fields?.description || "No description available",
+            skills_required: job.parsed_fields?.requiredSkills || [],
+            requirements: job.parsed_fields?.roles_or_responsibilities || [],
+            location: job.parsed_fields?.companyInfo?.[0]?.location || null,
+            job_type: job.parsed_fields?.jobType || null,
+            remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
+            parsed_job_data: job.parsed_fields || {},
+            job_text: jobText,
+            status: 'active',
+            created_at: job.created_at,
+            updated_at: new Date().toISOString(),
+          };
+        })
+      );
 
       const { error } = await supabase
         .from('jobs')
-        .upsert(jobsToUpsert, { onConflict: 'id' });
+        .upsert(jobsWithText, { onConflict: 'id' });
 
       if (error) {
         console.error('Error syncing jobs with database:', error);

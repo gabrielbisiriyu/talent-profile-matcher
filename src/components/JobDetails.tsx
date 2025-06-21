@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { FileText, Building, MapPin, Users, Globe } from "lucide-react";
 
 interface JobDetailsProps {
@@ -25,16 +26,13 @@ interface ParsedJob {
   roles_or_responsibilities?: string[];
 }
 
-interface JobResponse {
-  job_id: string;
-  hash: string;
-  is_duplicate: boolean;
-  parsed_job: ParsedJob;
+interface JobData {
   job_text: string;
+  parsed_job_data: ParsedJob;
 }
 
 export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
-  const [jobDetails, setJobDetails] = useState<JobResponse | null>(null);
+  const [jobDetails, setJobDetails] = useState<JobData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
@@ -42,13 +40,16 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
   const fetchJobDetails = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/parse_job?job_hash=${jobHash}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch job details');
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('job_text, parsed_job_data')
+        .eq('id', jobId)
+        .single();
+
+      if (error) {
+        throw new Error('Failed to fetch job details from database');
       }
 
-      const data: JobResponse = await response.json();
       setJobDetails(data);
     } catch (error) {
       console.error('Error fetching job details:', error);
@@ -101,7 +102,7 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
         ) : jobDetails ? (
           <div className="space-y-6">
             {/* Company Information */}
-            {jobDetails.parsed_job.companyInfo && jobDetails.parsed_job.companyInfo.length > 0 && (
+            {jobDetails.parsed_job_data?.companyInfo && jobDetails.parsed_job_data.companyInfo.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-lg">
@@ -110,7 +111,7 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {jobDetails.parsed_job.companyInfo.map((company, index) => (
+                  {jobDetails.parsed_job_data.companyInfo.map((company, index) => (
                     <div key={index} className="space-y-2">
                       {company.companyName && (
                         <div className="flex items-center space-x-2">
@@ -140,7 +141,7 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
             )}
 
             {/* Required Skills */}
-            {jobDetails.parsed_job.requiredSkills && jobDetails.parsed_job.requiredSkills.length > 0 && (
+            {jobDetails.parsed_job_data?.requiredSkills && jobDetails.parsed_job_data.requiredSkills.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-lg">
@@ -150,7 +151,7 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {jobDetails.parsed_job.requiredSkills.map((skill, index) => (
+                    {jobDetails.parsed_job_data.requiredSkills.map((skill, index) => (
                       <Badge key={index} variant="secondary" className="text-sm">
                         {skill}
                       </Badge>
@@ -161,7 +162,7 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
             )}
 
             {/* Roles and Responsibilities */}
-            {jobDetails.parsed_job.roles_or_responsibilities && jobDetails.parsed_job.roles_or_responsibilities.length > 0 && (
+            {jobDetails.parsed_job_data?.roles_or_responsibilities && jobDetails.parsed_job_data.roles_or_responsibilities.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-lg">
@@ -171,7 +172,7 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {jobDetails.parsed_job.roles_or_responsibilities.map((role, index) => (
+                    {jobDetails.parsed_job_data.roles_or_responsibilities.map((role, index) => (
                       <li key={index} className="flex items-start space-x-2">
                         <span className="text-purple-600 mt-1">•</span>
                         <span>{role}</span>
@@ -183,19 +184,21 @@ export const JobDetails = ({ jobId, jobHash, jobTitle }: JobDetailsProps) => {
             )}
 
             {/* Full Job Text */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-lg">
-                  <FileText className="h-5 w-5 text-orange-600" />
-                  <span>Full Job Description</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none text-sm leading-relaxed whitespace-pre-wrap">
-                  {formatJobText(jobDetails.job_text)}
-                </div>
-              </CardContent>
-            </Card>
+            {jobDetails.job_text && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <FileText className="h-5 w-5 text-orange-600" />
+                    <span>Full Job Description</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose max-w-none text-sm leading-relaxed whitespace-pre-wrap">
+                    {formatJobText(jobDetails.job_text)}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         ) : (
           <div className="text-center py-8">

@@ -162,6 +162,7 @@ export type Database = {
           description: string
           id: string
           job_embeddings: Json | null
+          job_text: string | null
           job_type: string | null
           location: string | null
           parsed_job_data: Json | null
@@ -180,6 +181,7 @@ export type Database = {
           description: string
           id?: string
           job_embeddings?: Json | null
+          job_text?: string | null
           job_type?: string | null
           location?: string | null
           parsed_job_data?: Json | null
@@ -198,6 +200,7 @@ export type Database = {
           description?: string
           id?: string
           job_embeddings?: Json | null
+          job_text?: string | null
           job_type?: string | null
           location?: string | null
           parsed_job_data?: Json | null
