@@ -8,6 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, FileText, CheckCircle } from "lucide-react";
+import { fetchCandidateData } from "@/lib/fetchCandidateData";
+
+
 
 export const CVUpload = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -149,6 +152,9 @@ export const CVUpload = () => {
       // Store the parsed data in the database
       await storeParsedDataInDatabase(data);
       
+      // ✅ MANUAL REFRESH
+      const updatedCandidate = await fetchCandidateData(user.id);
+      console.log("🔁 Manually fetched latest profile after CV upload:", updatedCandidate);
     } catch (error) {
       toast({
         title: "Upload failed",
