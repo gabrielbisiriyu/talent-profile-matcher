@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,66 +55,65 @@ export const JobManagement = () => {
     }
   };
 
-const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
-  if (!user?.id || fetchedJobs.length === 0) return;
+  const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
+    if (!user?.id || fetchedJobs.length === 0) return;
 
-  try {
-    const jobsWithText = fetchedJobs.map((job) => {
-      return {
-        id: job.id,
-        company_id: user.id,
-        title: job.parsed_fields?.jobTitle || job.title || "Job Position",
-        description: job.parsed_fields?.description || "No description available",
-        skills_required: job.parsed_fields?.requiredSkills || [],
-        requirements: job.parsed_fields?.roles_or_responsibilities || [],
-        location: job.parsed_fields?.companyInfo?.[0]?.location || null,
-        job_type: job.parsed_fields?.jobType || null,
-        remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
-        parsed_job_data: job.parsed_fields || {},
-        job_text: job.job_text || "", // ✅ Use job_text directly from the fetched job
-        status: 'active',
-        created_at: job.created_at,
-        updated_at: new Date().toISOString(),
-      };
-    });
+    try {
+      const jobsWithText = fetchedJobs.map((job) => {
+        return {
+          id: job.id,
+          company_id: user.id,
+          title: job.parsed_fields?.jobTitle || job.title || "Job Position",
+          description: job.parsed_fields?.description || "No description available",
+          skills_required: job.parsed_fields?.requiredSkills || [],
+          requirements: job.parsed_fields?.roles_or_responsibilities || [],
+          location: job.parsed_fields?.companyInfo?.[0]?.location || null,
+          job_type: job.parsed_fields?.jobType || null,
+          remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
+          parsed_job_data: job.parsed_fields || {},
+          job_text: job.job_text || "", // ✅ Use job_text directly from the fetched job
+          status: 'active',
+          created_at: job.created_at,
+          updated_at: new Date().toISOString(),
+        };
+      });
 
-    const { error } = await supabase
-      .from('jobs')
-      .upsert(jobsWithText, { onConflict: 'id' });
+      const { error } = await supabase
+        .from('jobs')
+        .upsert(jobsWithText, { onConflict: 'id' });
 
-    if (error) {
-      console.error('Error syncing jobs with database:', error);
+      if (error) {
+        console.error('Error syncing jobs with database:', error);
+      }
+    } catch (error) {
+      console.error('Error syncing jobs:', error);
     }
-  } catch (error) {
-    console.error('Error syncing jobs:', error);
-  }
-};
+  };
 
- const fetchCandidateProfiles = async (candidateIds: string[]) => {
-  if (!candidateIds.length) return;
+  const fetchCandidateProfiles = async (candidateIds: string[]) => {
+    if (!candidateIds.length) return;
 
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, first_name, last_name, email")
-      .in("id", candidateIds);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .in("id", candidateIds);
 
-    if (error) {
-      console.error("Error fetching candidate profiles:", error);
-      return;
+      if (error) {
+        console.error("Error fetching candidate profiles:", error);
+        return;
+      }
+
+      const profilesMap = data.reduce((acc: any, profile: any) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {});
+
+      setCandidateProfiles((prev) => ({ ...prev, ...profilesMap }));
+    } catch (error) {
+      console.error("Unexpected error fetching candidate profiles:", error);
     }
-
-    const profilesMap = data.reduce((acc: any, profile: any) => {
-      acc[profile.id] = profile;
-      return acc;
-    }, {});
-
-    setCandidateProfiles((prev) => ({ ...prev, ...profilesMap }));
-  } catch (error) {
-    console.error("Unexpected error fetching candidate profiles:", error);
-  }
-};
-
+  };
 
   const handleDeleteJob = async (jobId: string) => {
     try {
@@ -254,10 +252,6 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
                       </h4>
                       <div className="space-y-2 text-sm text-gray-600">
                         <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4" />
-                          <span>Job ID: {job.id}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
                           <Calendar className="h-4 w-4" />
                           <span>Created: {new Date(job.created_at).toLocaleDateString()}</span>
                         </div>
@@ -315,12 +309,6 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
                       </Button>
                     </div>
                   </div>
-
-                  <div className="border-t pt-4">
-                    <p className="text-sm text-gray-600">
-                      <strong>Hash:</strong> {job.text_hash}
-                    </p>
-                  </div>
                 </CardContent>
               </Card>
 
@@ -346,9 +334,6 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
                             </h5>
                             <p className="text-sm text-gray-600">
                               {candidateProfiles[candidate.cv_id]?.email || "Email not available"}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              CV ID: {candidate.cv_id}
                             </p>
                           </div>
                           <div className="text-right">
