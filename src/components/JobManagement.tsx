@@ -91,28 +91,31 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
   }
 };
 
-  const fetchCandidateProfiles = async (candidateIds: string[]) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email')
-        .in('id', candidateIds);
+ const fetchCandidateProfiles = async (candidateIds: string[]) => {
+  if (!candidateIds.length) return;
 
-      if (error) {
-        console.error('Error fetching candidate profiles:', error);
-        return;
-      }
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, email")
+      .in("id", candidateIds);
 
-      const profilesMap = data.reduce((acc, profile) => {
-        acc[profile.id] = profile;
-        return acc;
-      }, {});
-
-      setCandidateProfiles(prev => ({ ...prev, ...profilesMap }));
-    } catch (error) {
-      console.error('Error fetching candidate profiles:', error);
+    if (error) {
+      console.error("Error fetching candidate profiles:", error);
+      return;
     }
-  };
+
+    const profilesMap = data.reduce((acc: any, profile: any) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {});
+
+    setCandidateProfiles((prev) => ({ ...prev, ...profilesMap }));
+  } catch (error) {
+    console.error("Unexpected error fetching candidate profiles:", error);
+  }
+};
+
 
   const handleDeleteJob = async (jobId: string) => {
     try {
