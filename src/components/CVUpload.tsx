@@ -57,6 +57,7 @@ export const CVUpload = () => {
         work_experience: data.parsed_cv.experience || [],
         certifications: data.parsed_cv.certificates || [],
         cv_hash: data.hash,
+        cv_id: data.cv_id || null, // <-- add this line
         parsed_cv_data: data.parsed_cv,
         cv_embeddings: data.embeddings,
         updated_at: new Date().toISOString()
