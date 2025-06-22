@@ -54,55 +54,41 @@ export const JobManagement = () => {
     }
   };
 
-  const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
-    if (!user?.id || fetchedJobs.length === 0) return;
+const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
+  if (!user?.id || fetchedJobs.length === 0) return;
 
-    try {
-      // For each job, get the job_text from the parse_job endpoint
-      const jobsWithText = await Promise.all(
-        fetchedJobs.map(async (job) => {
-          let jobText = '';
-          try {
-            const parseResponse = await fetch(`http://localhost:8000/parse_job?job_hash=${job.text_hash}`);
-            if (parseResponse.ok) {
-              const parseData = await parseResponse.json();
-              // Extract job_text from the response
-              jobText = parseData.job_text || '';
-            }
-          } catch (error) {
-            console.error('Error fetching job text for job:', job.id, error);
-          }
+  try {
+    const jobsWithText = fetchedJobs.map((job) => {
+      return {
+        id: job.id,
+        company_id: user.id,
+        title: job.parsed_fields?.jobTitle || job.title || "Job Position",
+        description: job.parsed_fields?.description || "No description available",
+        skills_required: job.parsed_fields?.requiredSkills || [],
+        requirements: job.parsed_fields?.roles_or_responsibilities || [],
+        location: job.parsed_fields?.companyInfo?.[0]?.location || null,
+        job_type: job.parsed_fields?.jobType || null,
+        remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
+        parsed_job_data: job.parsed_fields || {},
+        job_text: job.job_text || "", // ✅ Use job_text directly from the fetched job
+        status: 'active',
+        created_at: job.created_at,
+        updated_at: new Date().toISOString(),
+      };
+    });
 
-          return {
-            id: job.id,
-            company_id: user.id,
-            title: job.parsed_fields?.jobTitle || job.title || "Job Position",
-            description: job.parsed_fields?.description || "No description available",
-            skills_required: job.parsed_fields?.requiredSkills || [],
-            requirements: job.parsed_fields?.roles_or_responsibilities || [],
-            location: job.parsed_fields?.companyInfo?.[0]?.location || null,
-            job_type: job.parsed_fields?.jobType || null,
-            remote_option: job.parsed_fields?.companyInfo?.[0]?.location?.toLowerCase().includes('remote') || false,
-            parsed_job_data: job.parsed_fields || {},
-            job_text: jobText, // Store the extracted job_text
-            status: 'active',
-            created_at: job.created_at,
-            updated_at: new Date().toISOString(),
-          };
-        })
-      );
+    const { error } = await supabase
+      .from('jobs')
+      .upsert(jobsWithText, { onConflict: 'id' });
 
-      const { error } = await supabase
-        .from('jobs')
-        .upsert(jobsWithText, { onConflict: 'id' });
-
-      if (error) {
-        console.error('Error syncing jobs with database:', error);
-      }
-    } catch (error) {
-      console.error('Error syncing jobs:', error);
+    if (error) {
+      console.error('Error syncing jobs with database:', error);
     }
-  };
+  } catch (error) {
+    console.error('Error syncing jobs:', error);
+  }
+};
+
 
   const handleDeleteJob = async (jobId: string) => {
     try {
