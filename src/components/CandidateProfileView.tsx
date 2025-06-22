@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Mail, Phone, MapPin, Calendar, Award, Briefcase, ExternalLink, Download } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Award, Briefcase, ExternalLink, Download, Github, Linkedin, Globe, GraduationCap } from "lucide-react";
 
 interface CandidateProfileViewProps {
   candidate: any;
@@ -27,6 +27,8 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
   const fetchCandidateDetails = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching candidate details for cv_id:', candidate.cv_id);
+      
       const { data, error } = await supabase
         .from('candidates')
         .select('*')
@@ -36,6 +38,7 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
       if (error) {
         console.error('Error fetching candidate details:', error);
       } else {
+        console.log('Fetched candidate details:', data);
         setCandidateDetails(data);
       }
     } catch (error) {
@@ -51,16 +54,36 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
     }
   };
 
+  // Helper function to safely get education data
+  const getEducationData = () => {
+    if (!candidateDetails?.education) return [];
+    if (Array.isArray(candidateDetails.education)) return candidateDetails.education;
+    return [];
+  };
+
+  // Helper function to safely get work experience data
+  const getWorkExperienceData = () => {
+    if (!candidateDetails?.work_experience) return [];
+    if (Array.isArray(candidateDetails.work_experience)) return candidateDetails.work_experience;
+    return [];
+  };
+
+  const displayEmail = candidateDetails?.email_from_cv || candidate?.candidate?.email || "No email available";
+  const displayAddress = candidateDetails?.address;
+  const displayGithub = candidateDetails?.github_url;
+  const displayLinkedin = candidateDetails?.linkedin_url;
+  const displayName = candidate?.candidate?.name || "Candidate";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <User className="h-5 w-5 text-blue-600" />
-            <span>{candidate?.candidate?.name || "Candidate Profile"}</span>
+            <span>{displayName} - Candidate Profile</span>
           </DialogTitle>
           <DialogDescription>
-            Detailed candidate information and qualifications
+            Complete candidate profile and qualifications
           </DialogDescription>
         </DialogHeader>
 
@@ -80,48 +103,20 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {candidateDetails.email_from_cv && (
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span>{candidateDetails.email_from_cv}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <span>{displayEmail}</span>
+                  </div>
                   {candidateDetails.phone_number && (
                     <div className="flex items-center space-x-2">
                       <Phone className="h-4 w-4 text-gray-500" />
                       <span>{candidateDetails.phone_number}</span>
                     </div>
                   )}
-                  {candidateDetails.address && (
+                  {displayAddress && (
                     <div className="flex items-center space-x-2">
                       <MapPin className="h-4 w-4 text-gray-500" />
-                      <span>{candidateDetails.address}</span>
-                    </div>
-                  )}
-                  {candidateDetails.linkedin_url && (
-                    <div className="flex items-center space-x-2">
-                      <ExternalLink className="h-4 w-4 text-gray-500" />
-                      <a 
-                        href={candidateDetails.linkedin_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        LinkedIn Profile
-                      </a>
-                    </div>
-                  )}
-                  {candidateDetails.github_url && (
-                    <div className="flex items-center space-x-2">
-                      <ExternalLink className="h-4 w-4 text-gray-500" />
-                      <a 
-                        href={candidateDetails.github_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        GitHub Profile
-                      </a>
+                      <span>{displayAddress}</span>
                     </div>
                   )}
                 </CardContent>
@@ -143,15 +138,15 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
               )}
 
               {/* Skills */}
-              {candidateDetails.skills && candidateDetails.skills.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-lg">
-                      <Award className="h-5 w-5 text-purple-600" />
-                      <span>Skills</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <Award className="h-5 w-5 text-purple-600" />
+                    <span>Skills</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {candidateDetails.skills && candidateDetails.skills.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {candidateDetails.skills.map((skill: string, index: number) => (
                         <Badge key={index} variant="secondary" className="text-sm">
@@ -159,70 +154,66 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
                         </Badge>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Work Experience */}
-              {candidateDetails.work_experience && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-lg">
-                      <Briefcase className="h-5 w-5 text-orange-600" />
-                      <span>Work Experience</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {Array.isArray(candidateDetails.work_experience) ? (
-                        candidateDetails.work_experience.map((exp: any, index: number) => (
-                          <div key={index} className="border-l-2 border-orange-200 pl-4">
-                            <h4 className="font-semibold">{exp.position || exp.title}</h4>
-                            <p className="text-sm text-gray-600">{exp.company}</p>
-                            {exp.duration && (
-                              <p className="text-xs text-gray-500">{exp.duration}</p>
-                            )}
-                            {exp.description && (
-                              <p className="text-sm mt-2">{exp.description}</p>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-gray-600">Work experience details available</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                  ) : (
+                    <div className="text-sm text-gray-500">No skills available</div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Education */}
-              {candidateDetails.education && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-lg">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                      <span>Education</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <GraduationCap className="h-5 w-5 text-blue-600" />
+                    <span>Education</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {getEducationData().length > 0 ? (
                     <div className="space-y-4">
-                      {Array.isArray(candidateDetails.education) ? (
-                        candidateDetails.education.map((edu: any, index: number) => (
-                          <div key={index} className="border-l-2 border-blue-200 pl-4">
-                            <h4 className="font-semibold">{edu.degree || edu.qualification}</h4>
-                            <p className="text-sm text-gray-600">{edu.institution || edu.school}</p>
-                            {edu.year && (
-                              <p className="text-xs text-gray-500">{edu.year}</p>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-gray-600">Education details available</p>
-                      )}
+                      {getEducationData().map((edu: any, index: number) => (
+                        <div key={index} className="border-l-2 border-blue-200 pl-4">
+                          <h4 className="font-semibold">{edu.degree} in {edu.field}</h4>
+                          <p className="text-sm text-gray-600">{edu.school}</p>
+                          {edu.year && (
+                            <p className="text-xs text-gray-500">{edu.year}</p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  ) : (
+                    <div className="text-sm text-gray-500">No education information available</div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Work Experience */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <Briefcase className="h-5 w-5 text-orange-600" />
+                    <span>Work Experience</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {getWorkExperienceData().length > 0 ? (
+                    <div className="space-y-4">
+                      {getWorkExperienceData().map((exp: any, index: number) => (
+                        <div key={index} className="border-l-2 border-orange-200 pl-4">
+                          <h4 className="font-semibold">{exp.jobTitle}</h4>
+                          <p className="text-sm text-blue-600 font-medium">{exp.company}</p>
+                          <p className="text-xs text-gray-500 mb-2">{exp.timeWorked}</p>
+                          {exp.responsibilities && exp.responsibilities !== "null" && (
+                            <p className="text-sm text-gray-700">{exp.responsibilities}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">No work experience available</div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Certifications */}
               {candidateDetails.certifications && candidateDetails.certifications.length > 0 && (
@@ -245,6 +236,83 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
                 </Card>
               )}
 
+              {/* Social Links */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <ExternalLink className="h-5 w-5 text-gray-600" />
+                    <span>Professional Links</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* GitHub */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium flex items-center space-x-1">
+                      <Github className="h-3 w-3" />
+                      <span>GitHub</span>
+                    </label>
+                    {displayGithub && displayGithub !== "null" ? (
+                      <a
+                        href={displayGithub.startsWith('http') ? displayGithub : `https://${displayGithub}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-blue-600 hover:text-blue-800 underline p-2 bg-gray-50 rounded break-all"
+                      >
+                        {displayGithub}
+                      </a>
+                    ) : (
+                      <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded">
+                        No GitHub URL
+                      </div>
+                    )}
+                  </div>
+
+                  {/* LinkedIn */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium flex items-center space-x-1">
+                      <Linkedin className="h-3 w-3" />
+                      <span>LinkedIn</span>
+                    </label>
+                    {displayLinkedin && displayLinkedin !== "null" ? (
+                      <a
+                        href={displayLinkedin.startsWith('http') ? displayLinkedin : `https://${displayLinkedin}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-blue-600 hover:text-blue-800 underline p-2 bg-gray-50 rounded break-all"
+                      >
+                        {displayLinkedin}
+                      </a>
+                    ) : (
+                      <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded">
+                        No LinkedIn URL
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Portfolio */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium flex items-center space-x-1">
+                      <Globe className="h-3 w-3" />
+                      <span>Portfolio</span>
+                    </label>
+                    {candidateDetails.portfolio_url ? (
+                      <a
+                        href={candidateDetails.portfolio_url.startsWith('http') ? candidateDetails.portfolio_url : `https://${candidateDetails.portfolio_url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-blue-600 hover:text-blue-800 underline p-2 bg-gray-50 rounded break-all"
+                      >
+                        {candidateDetails.portfolio_url}
+                      </a>
+                    ) : (
+                      <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded">
+                        No Portfolio URL
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* CV Download */}
               {candidateDetails.cv_file_url && (
                 <Card>
@@ -265,7 +333,7 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-600">No candidate details available</p>
+              <p className="text-gray-600">No candidate details found. This candidate may not have uploaded their CV yet.</p>
             </div>
           )}
         </ScrollArea>
