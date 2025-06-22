@@ -16,30 +16,46 @@ interface CandidateProfileViewProps {
 
 export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidateProfileViewProps) => {
   const [candidateDetails, setCandidateDetails] = useState<any>(null);
+  const [candidateProfile, setCandidateProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && candidate?.cv_id) {
-      fetchCandidateDetails();
+      fetchCandidateData();
     }
   }, [isOpen, candidate]);
 
-  const fetchCandidateDetails = async () => {
+  const fetchCandidateData = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching candidate details for cv_id:', candidate.cv_id);
+      console.log('Fetching candidate data for cv_id:', candidate.cv_id);
       
-      const { data, error } = await supabase
+      // Fetch candidate details from candidates table
+      const { data: candidateData, error: candidateError } = await supabase
         .from('candidates')
         .select('*')
         .eq('id', candidate.cv_id)
         .single();
 
-      if (error) {
-        console.error('Error fetching candidate details:', error);
+      if (candidateError) {
+        console.error('Error fetching candidate details:', candidateError);
       } else {
-        console.log('Fetched candidate details:', data);
-        setCandidateDetails(data);
+        console.log('Fetched candidate details:', candidateData);
+        setCandidateDetails(candidateData);
+      }
+
+      // Fetch candidate profile from profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', candidate.cv_id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching candidate profile:', profileError);
+      } else {
+        console.log('Fetched candidate profile:', profileData);
+        setCandidateProfile(profileData);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -68,11 +84,11 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
     return [];
   };
 
-  const displayEmail = candidateDetails?.email_from_cv || candidate?.candidate?.email || "No email available";
+  const displayEmail = candidateDetails?.email_from_cv || candidateProfile?.email || "No email available";
   const displayAddress = candidateDetails?.address;
   const displayGithub = candidateDetails?.github_url;
   const displayLinkedin = candidateDetails?.linkedin_url;
-  const displayName = candidate?.candidate?.name || "Candidate";
+  const displayName = candidateProfile ? `${candidateProfile.first_name || ''} ${candidateProfile.last_name || ''}`.trim() || "Candidate" : "Candidate";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -83,7 +99,7 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
             <span>{displayName} - Candidate Profile</span>
           </DialogTitle>
           <DialogDescription>
-            Complete candidate profile and qualifications
+            Complete candidate profile and qualifications (View Only)
           </DialogDescription>
         </DialogHeader>
 

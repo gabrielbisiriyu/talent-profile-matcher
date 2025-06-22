@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ export const JobManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [matchingJobId, setMatchingJobId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<{ [jobId: string]: any[] }>({});
+  const [candidateProfiles, setCandidateProfiles] = useState<{ [candidateId: string]: any }>({});
   const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -89,6 +91,28 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
   }
 };
 
+  const fetchCandidateProfiles = async (candidateIds: string[]) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', candidateIds);
+
+      if (error) {
+        console.error('Error fetching candidate profiles:', error);
+        return;
+      }
+
+      const profilesMap = data.reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {});
+
+      setCandidateProfiles(prev => ({ ...prev, ...profilesMap }));
+    } catch (error) {
+      console.error('Error fetching candidate profiles:', error);
+    }
+  };
 
   const handleDeleteJob = async (jobId: string) => {
     try {
@@ -143,6 +167,10 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
       const data = await response.json();
       setCandidates(prev => ({ ...prev, [jobId]: data }));
       
+      // Fetch candidate profiles for the matched candidates
+      const candidateIds = data.map((candidate: any) => candidate.cv_id);
+      await fetchCandidateProfiles(candidateIds);
+      
       toast({
         title: "Matching completed!",
         description: `Found ${data.length} matching candidates`,
@@ -170,6 +198,14 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
     if (score >= 0.6) return "Good";
     if (score >= 0.4) return "Fair";
     return "Poor";
+  };
+
+  const getCandidateName = (candidateId: string) => {
+    const profile = candidateProfiles[candidateId];
+    if (profile) {
+      return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Candidate";
+    }
+    return "Candidate";
   };
 
   if (isLoading) {
@@ -303,10 +339,10 @@ const syncJobsWithDatabase = async (fetchedJobs: any[]) => {
                           <div>
                             <h5 className="font-semibold text-blue-600 hover:underline flex items-center space-x-2">
                               <User className="h-4 w-4" />
-                              <span>{candidate.candidate?.name || "Candidate"}</span>
+                              <span>{getCandidateName(candidate.cv_id)}</span>
                             </h5>
                             <p className="text-sm text-gray-600">
-                              {candidate.candidate?.email || "Email not available"}
+                              {candidateProfiles[candidate.cv_id]?.email || "Email not available"}
                             </p>
                             <p className="text-sm text-gray-600">
                               CV ID: {candidate.cv_id}
