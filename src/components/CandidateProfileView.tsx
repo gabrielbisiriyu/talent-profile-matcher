@@ -28,13 +28,14 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
   const fetchCandidateData = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching candidate data for cv_id:', candidate.cv_id);
+      console.log("👀 Candidate prop received in modal:", candidate);
+      console.log('Fetching candidate data for cv_id:', candidate?.cv_id);
       
       // Fetch candidate details from candidates table
       const { data: candidateData, error: candidateError } = await supabase
         .from('candidates')
         .select('*')
-        .eq('id', candidate.cv_id)
+        .eq('cv_id', candidate.cv_id)
         .single();
 
       if (candidateError) {
@@ -44,19 +45,7 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
         setCandidateDetails(candidateData);
       }
 
-      // Fetch candidate profile from profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', candidate.cv_id)
-        .single();
 
-      if (profileError) {
-        console.error('Error fetching candidate profile:', profileError);
-      } else {
-        console.log('Fetched candidate profile:', profileData);
-        setCandidateProfile(profileData);
-      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -88,7 +77,8 @@ export const CandidateProfileView = ({ candidate, isOpen, onClose }: CandidatePr
   const displayAddress = candidateDetails?.address;
   const displayGithub = candidateDetails?.github_url;
   const displayLinkedin = candidateDetails?.linkedin_url;
-  const displayName = candidateProfile ? `${candidateProfile.first_name || ''} ${candidateProfile.last_name || ''}`.trim() || "Candidate" : "Candidate";
+  //const displayName = candidateProfile ? `${candidateProfile.first_name || ''} ${candidateProfile.last_name || ''}`.trim() || "Candidate" : "Candidate";
+  const displayName = "Candidate";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
