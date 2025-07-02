@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { JobDetails } from "@/components/JobDetails";
 import { Target, User, Briefcase, Star, Send } from "lucide-react";
 
 export const MatchingResults = () => {
@@ -216,12 +216,6 @@ export const MatchingResults = () => {
                         : (match.candidate?.name || "Candidate")
                       }
                     </h4>
-                    <p className="text-sm text-gray-600">
-                      {isCandidate 
-                        ? `Job ID: ${match.job_id}`
-                        : `CV ID: ${match.cv_id}`
-                      }
-                    </p>
                     {isCandidate ? (
                       <p className="text-sm text-gray-600">
                         Posted: {new Date(match.created_at).toLocaleDateString()}
@@ -240,16 +234,25 @@ export const MatchingResults = () => {
                     <p className="text-2xl font-bold text-gray-900">
                       {(match.combined_score ).toFixed(1)}%
                     </p>
-                    {isCandidate && (
-                      <Button
-                        onClick={() => handleApplyForJob(match.job_id, match.combined_score)}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                        size="sm"
-                      >
-                        <Send className="h-4 w-4 mr-2" />
-                        Apply for Job
-                      </Button>
-                    )}
+                    <div className="flex flex-col space-y-2">
+                      {isCandidate && (
+                        <>
+                          <JobDetails 
+                            jobId={match.job_id} 
+                            jobHash={match.job_hash || ""} 
+                            jobTitle={match.job_title || "Job Position"} 
+                          />
+                          <Button
+                            onClick={() => handleApplyForJob(match.job_id, match.combined_score)}
+                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                            size="sm"
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            Apply for Job
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 

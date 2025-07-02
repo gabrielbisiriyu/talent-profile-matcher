@@ -58,6 +58,7 @@ export type Database = {
           cv_file_type: string | null
           cv_file_url: string | null
           cv_hash: string | null
+          cv_id: string | null
           education: Json | null
           email_from_cv: string | null
           experience_years: number | null
@@ -81,6 +82,7 @@ export type Database = {
           cv_file_type?: string | null
           cv_file_url?: string | null
           cv_hash?: string | null
+          cv_id?: string | null
           education?: Json | null
           email_from_cv?: string | null
           experience_years?: number | null
@@ -104,6 +106,7 @@ export type Database = {
           cv_file_type?: string | null
           cv_file_url?: string | null
           cv_hash?: string | null
+          cv_id?: string | null
           education?: Json | null
           email_from_cv?: string | null
           experience_years?: number | null
