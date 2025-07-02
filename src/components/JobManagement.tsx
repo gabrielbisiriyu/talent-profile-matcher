@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +9,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { JobDetails } from "@/components/JobDetails";
 import { CandidateProfileView } from "@/components/CandidateProfileView";
-import { Trash2, Building, Calendar, Users, Star, User } from "lucide-react";
+import { Trash2, Building, Calendar, Users, Star, User, UserCheck } from "lucide-react";
 
 export const JobManagement = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [matchingJobId, setMatchingJobId] = useState<string | null>(null);
+  const [rankingJobId, setRankingJobId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<{ [jobId: string]: any[] }>({});
+  const [applicants, setApplicants] = useState<{ [jobId: string]: any[] }>({});
   const [candidateProfiles, setCandidateProfiles] = useState<{ [cvId: string]: any }>({});
   const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null);
   const { toast } = useToast();
@@ -126,6 +129,26 @@ export const JobManagement = () => {
     }
   };
 
+  const handleRankApplicants = async (jobId: string) => {
+    setRankingJobId(jobId);
+    try {
+      const response = await fetch(`http://localhost:8000/rank_applicants/?job_id=${jobId}&top_n=10`, { method: "GET" });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to rank applicants");
+      }
+      const data = await response.json();
+      setApplicants(prev => ({ ...prev, [jobId]: data }));
+      const candidateCvIds = data.map((candidate: any) => candidate.cv_id);
+      await fetchCandidateProfiles(candidateCvIds);
+      toast({ title: "Applicants ranked!", description: `Found ${data.length} applicants for this job` });
+    } catch (error) {
+      toast({ title: "Ranking failed", description: error instanceof Error ? error.message : "An error occurred", variant: "destructive" });
+    } finally {
+      setRankingJobId(null);
+    }
+  };
+
   const getCandidateName = (cvId: string) => {
     const info = candidateProfiles[cvId];
     return info?.name || "Candidate";
@@ -216,6 +239,9 @@ export const JobManagement = () => {
                       <Button onClick={() => handleFindCandidates(job.id, job.text_hash)} disabled={matchingJobId === job.id} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
                         {matchingJobId === job.id ? "Finding..." : (<><Users className="h-4 w-4 mr-2" />Find Candidates</>)}
                       </Button>
+                      <Button onClick={() => handleRankApplicants(job.id)} disabled={rankingJobId === job.id} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                        {rankingJobId === job.id ? "Ranking..." : (<><UserCheck className="h-4 w-4 mr-2" />Find Candidates who applied for this job</>)}
+                      </Button>
                       <Button variant="destructive" size="sm" onClick={() => handleDeleteJob(job.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -256,6 +282,46 @@ export const JobManagement = () => {
                             <p className="text-xs font-medium text-gray-700 mb-1">Overall Score</p>
                             <Progress value={candidate.combined_score} className="h-1.5" />
                             <p className="text-xs text-gray-600 mt-1">{candidate.combined_score.toFixed(1)}%</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {applicants[job.id] && applicants[job.id].length > 0 && (
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <UserCheck className="h-5 w-5 text-blue-600" />
+                      <span>Job Applicants ({applicants[job.id].length})</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {applicants[job.id].map((applicant, index) => (
+                      <Card key={index} className="bg-white/80 cursor-pointer hover:bg-white/90 transition-colors" onClick={() => setSelectedCandidate(applicant)}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h5 className="font-semibold text-blue-600 hover:underline flex items-center space-x-2">
+                                <User className="h-4 w-4" />
+                                <span>{getCandidateName(applicant.cv_id)}</span>
+                              </h5>
+                              <p className="text-sm text-gray-600">{getCandidateEmail(applicant.cv_id)}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(applicant.combined_score)}`}>
+                                <Star className="h-3 w-3 inline mr-1" />
+                                {getScoreLabel(applicant.combined_score)}
+                              </div>
+                              <p className="text-lg font-bold text-gray-900 mt-1">{applicant.combined_score.toFixed(1)}%</p>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1">Overall Score</p>
+                            <Progress value={applicant.combined_score} className="h-1.5" />
+                            <p className="text-xs text-gray-600 mt-1">{applicant.combined_score.toFixed(1)}%</p>
                           </div>
                         </CardContent>
                       </Card>

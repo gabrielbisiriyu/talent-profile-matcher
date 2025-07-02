@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { JobDetails } from "@/components/JobDetails";
-import { Target, User, Briefcase, Star, Send } from "lucide-react";
+import { Target, User, Briefcase, Star, Send, Trash2 } from "lucide-react";
 
 export const MatchingResults = () => {
   const [cvHash, setCvHash] = useState("");
   const [matches, setMatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [candidateData, setCandidateData] = useState<any>(null);
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
+  const [loadingApplications, setLoadingApplications] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const { userProfile, user } = useAuth();
 
@@ -33,7 +36,7 @@ export const MatchingResults = () => {
     try {
       const { data, error } = await supabase
         .from('candidates')
-        .select('cv_hash')
+        .select('cv_hash, cv_id')
         .eq('id', user.id)
         .single();
 
@@ -45,6 +48,29 @@ export const MatchingResults = () => {
       console.error('Error fetching candidate data:', error);
     }
   };
+
+  const fetchAppliedJobs = async () => {
+    if (!candidateData?.cv_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('job_id')
+        .eq('candidate_id', user?.id);
+
+      if (data) {
+        setAppliedJobs(new Set(data.map(app => app.job_id)));
+      }
+    } catch (error) {
+      console.error('Error fetching applied jobs:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (candidateData?.cv_id && matches.length > 0) {
+      fetchAppliedJobs();
+    }
+  }, [candidateData, matches]);
 
   const handleMatching = async () => {
     if (isCandidate && !candidateData?.cv_hash) {
@@ -99,39 +125,94 @@ export const MatchingResults = () => {
     }
   };
 
-  const handleApplyForJob = async (jobId: string, matchScore: number) => {
-    if (!user?.id) {
+  const handleApplyForJob = async (jobId: string) => {
+    if (!candidateData?.cv_id) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to apply for jobs",
+        title: "No CV found",
+        description: "Please upload your CV first",
         variant: "destructive",
       });
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('applications')
-        .insert({
-          candidate_id: user.id,
-          job_id: jobId,
-          match_score: matchScore,
-          status: 'pending'
-        });
+    setLoadingApplications(prev => new Set(prev).add(jobId));
 
-      if (error) {
-        throw error;
+    try {
+      const response = await fetch(`http://localhost:8000/apply_to_job/?cv_id=${candidateData.cv_id}&job_id=${jobId}`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Application failed");
       }
 
-      toast({
-        title: "Application submitted!",
-        description: "Your application has been successfully submitted",
-      });
+      const result = await response.json();
+      
+      if (result.detail === "Already applied to this job.") {
+        toast({
+          title: "Already applied",
+          description: "You have already applied to this job",
+          variant: "destructive",
+        });
+      } else {
+        setAppliedJobs(prev => new Set(prev).add(jobId));
+        toast({
+          title: "Application submitted!",
+          description: "Your application has been successfully submitted",
+        });
+      }
     } catch (error) {
       toast({
         title: "Application failed",
         description: error instanceof Error ? error.message : "Failed to submit application",
         variant: "destructive",
+      });
+    } finally {
+      setLoadingApplications(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(jobId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleDeleteApplication = async (jobId: string) => {
+    if (!candidateData?.cv_id) return;
+
+    setLoadingApplications(prev => new Set(prev).add(jobId));
+
+    try {
+      const response = await fetch(`http://localhost:8000/delete_application/?cv_id=${candidateData.cv_id}&job_id=${jobId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to withdraw application");
+      }
+
+      setAppliedJobs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(jobId);
+        return newSet;
+      });
+
+      toast({
+        title: "Application withdrawn",
+        description: "Your application has been successfully withdrawn",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to withdraw application",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingApplications(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(jobId);
+        return newSet;
       });
     }
   };
@@ -242,14 +323,27 @@ export const MatchingResults = () => {
                             jobHash={match.job_hash || ""} 
                             jobTitle={match.job_title || "Job Position"} 
                           />
-                          <Button
-                            onClick={() => handleApplyForJob(match.job_id, match.combined_score)}
-                            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                            size="sm"
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Apply for Job
-                          </Button>
+                          {appliedJobs.has(match.job_id) ? (
+                            <Button
+                              onClick={() => handleDeleteApplication(match.job_id)}
+                              disabled={loadingApplications.has(match.job_id)}
+                              variant="destructive"
+                              size="sm"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {loadingApplications.has(match.job_id) ? "Withdrawing..." : "Delete Application"}
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleApplyForJob(match.job_id)}
+                              disabled={loadingApplications.has(match.job_id)}
+                              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                              size="sm"
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              {loadingApplications.has(match.job_id) ? "Applying..." : "Apply for Job"}
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>
